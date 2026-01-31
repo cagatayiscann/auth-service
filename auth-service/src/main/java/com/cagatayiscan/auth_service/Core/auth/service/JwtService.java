@@ -1,0 +1,38 @@
+package com.cagatayiscan.auth_service.Core.auth.service;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Map;
+
+@Service
+public class JwtService {
+    private final SecretKey key;
+    private final long expMinutes;
+
+    public JwtService(
+            @Value("${auth.jwt.secret}") String secret,
+            @Value("${auth.jwt.exp-minutes}") long expMinutes
+    ) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expMinutes = expMinutes;
+    }
+
+    public String issueToken(long userId, String username) {
+        Instant now = Instant.now();
+        Instant exp = now.plusSeconds(expMinutes * 60);
+
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .claims(Map.of("username", username))
+                .issuedAt(Date.from(exp))
+                .signWith(key)
+                .compact();
+    }
+}
